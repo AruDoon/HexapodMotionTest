@@ -325,7 +325,7 @@ void kaki_to_coxa();
 void lift_front_legs();
 void lift_middle_legs();
 void lift_back_legs();
-void translation_test();
+void body_translation_test();
 void setPosisiServo(uint8_t dxl_id, uint16_t posisi);
 void setPosisiServoSync(uint8_t dxl_id1, uint16_t posisi1, uint8_t dxl_id2, uint16_t posisi2);
 // void setPosisiServoSync(std::vector<uint8_t> dxl_ids, std::vector<uint16_t> posisi)

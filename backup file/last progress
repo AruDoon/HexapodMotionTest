@@ -108,8 +108,8 @@ int main() {
         else if (choice == '4') {
             lift_back_legs();
         }
-        else if (choice == '5') {
-            translation_test();
+        else if (choice == '4') {
+            body_translation_test();
         }
         
         
@@ -596,7 +596,6 @@ void coba_majuv2()
 
 void lift_front_legs() {
     // Get current positions to preserve them
-    //front legs
     float R1_x_current = R1_x;
     float R1_y_current = R1_y;
     float R1_z_current = R1_z;
@@ -605,23 +604,11 @@ void lift_front_legs() {
     float L1_y_current = L1_y;
     float L1_z_current = L1_z;
 
-    //back legs
-    float R3_x_current = R3_x;
-    float R3_y_current = R3_y;
-    float R3_z_current = R3_z;
-
-    float L3_x_current = L3_x;
-    float L3_y_current = L3_y;
-    float L3_z_current = L3_z;
-
     // Lift the legs by directly calling inverse_k
     // This will move just the specified legs to a higher position
     // The -30 value will lift the legs higher than the default -60 (the smaller, the higher [I guess... idk let's just skibidi it all the way through])
-    inverse_k(kR1, R1_x_current, R1_y_current, -35, very_slow);
-    inverse_k(kL1, L1_x_current, L1_y_current, -35, very_slow);
-
-    inverse_k(kR3, R3_x_current, R3_y_current, -85, very_slow);
-    inverse_k(kL3, L3_x_current, L3_y_current, -85, very_slow);
+    inverse_k(kR1, R1_x_current, R1_y_current, -40, very_slow);
+    inverse_k(kL1, L1_x_current, L1_y_current, -40, very_slow);
     
     // Wait while legs are up
     usleep(2000000); // 2 seconds
@@ -629,9 +616,6 @@ void lift_front_legs() {
     // Return legs to original position
     inverse_k(kR1, R1_x_current, R1_y_current, R1_z_current, very_slow);
     inverse_k(kL1, L1_x_current, L1_y_current, L1_z_current, very_slow);
-
-    inverse_k(kR3, R3_x_current, R3_y_current, R3_z_current, very_slow);
-    inverse_k(kL3, L3_x_current, L3_y_current, L3_z_current, very_slow);
 }
 
 
@@ -662,16 +646,6 @@ void lift_middle_legs() {
 
 void lift_back_legs() {
     // Get current positions to preserve them
-    //front legs
-    float R1_x_current = R1_x;
-    float R1_y_current = R1_y;
-    float R1_z_current = R1_z;
-
-    float L1_x_current = L1_x;
-    float L1_y_current = L1_y;
-    float L1_z_current = L1_z;
-
-    //back legs
     float R3_x_current = R3_x;
     float R3_y_current = R3_y;
     float R3_z_current = R3_z;
@@ -683,192 +657,17 @@ void lift_back_legs() {
     // Lift the legs by directly calling inverse_k
     // This will move just the specified legs to a higher position
     // The -30 value will lift the legs higher than the default -60 (the smaller, the higher [I guess... idk let's just skibidi it all the way through])
-    inverse_k(kR1, R1_x_current, R1_y_current, -85, very_slow);
-    inverse_k(kL1, L1_x_current, L1_y_current, -85, very_slow);
-
-    inverse_k(kR3, R3_x_current, R3_y_current, -35, very_slow);
-    inverse_k(kL3, L3_x_current, L3_y_current, -35, very_slow);
+    inverse_k(kR3, R3_x_current, R3_y_current, -40, very_slow);
+    inverse_k(kL3, L3_x_current, L3_y_current, -40, very_slow);
     
     // Wait while legs are up
     usleep(2000000); // 2 seconds
     
     // Return legs to original position
-    inverse_k(kR1, R1_x_current, R1_y_current, R1_z_current, very_slow);
-    inverse_k(kL1, L1_x_current, L1_y_current, L1_z_current, very_slow);
-
     inverse_k(kR3, R3_x_current, R3_y_current, R3_z_current, very_slow);
     inverse_k(kL3, L3_x_current, L3_y_current, L3_z_current, very_slow);
 }
 
-void miring_kiri() {
-    //priming
-    siap();
-    // ingat posisi kaki sebelum mulai
-    //front
-    float R1_x_current = R1_x;
-    float R1_y_current = R1_y;
-    float R1_z_current = R1_z;
-
-    float L1_x_current = L1_x;
-    float L1_y_current = L1_y;
-    float L1_z_current = L1_z;
-
-    //mid
-    float R2_x_current = R2_x;
-    float R2_y_current = R2_y;
-    float R2_z_current = R2_z;
-
-    float L2_x_current = L2_x;
-    float L2_y_current = L2_y;
-    float L2_z_current = L2_z;
-
-    //rear
-    float R3_x_current = R3_x;
-    float R3_y_current = R3_y;
-    float R3_z_current = R3_z;
-
-    float L3_x_current = L3_x;
-    float L3_y_current = L3_y;
-    float L3_z_current = L3_z;
-
-    //delay sebentar (make sure are legs are ready)
-    usleep(500000);
-
-    //begin translation
-    inverse_k(kR1, R1_x_current, R1_y_current, R1_z_current, very_slow);
-    inverse_k(kL1, L1_x_current, L1_y_current, -30, very_slow);
-
-    inverse_k(kR2, R2_x_current, R2_y_current, R2_z_current, very_slow);
-    inverse_k(kL2, L2_x_current, L2_y_current, -30, very_slow);
-
-    inverse_k(kR3, R3_x_current, R3_y_current, R3_z_current, very_slow);
-    inverse_k(kL3, L3_x_current, L3_y_current, -30, very_slow);
-
-    //delay before returning back to normal
-    usleep(1500000);
-
-    //back to posisi sebelumnya
-    inverse_k(kR1, R1_x_current, R1_y_current, R1_z_current, very_slow);
-    inverse_k(kL1, L1_x_current, L1_y_current, L1_z_current, very_slow);
-
-    inverse_k(kR2, R2_x_current, R2_y_current, R2_z_current, very_slow);
-    inverse_k(kL2, L2_x_current, L2_y_current, L2_z_current, very_slow);
-
-    inverse_k(kR3, R3_x_current, R3_y_current, R3_z_current, very_slow);
-    inverse_k(kL3, L3_x_current, L3_y_current, L3_z_current, very_slow);
-}
-
-void miring_kanan() {
-    // ingat posisi kaki sebelum mulai
-    //front
-    float R1_x_current = R1_x;
-    float R1_y_current = R1_y;
-    float R1_z_current = R1_z;
-
-    float L1_x_current = L1_x;
-    float L1_y_current = L1_y;
-    float L1_z_current = L1_z;
-
-    //mid
-    float R2_x_current = R2_x;
-    float R2_y_current = R2_y;
-    float R2_z_current = R2_z;
-
-    float L2_x_current = L2_x;
-    float L2_y_current = L2_y;
-    float L2_z_current = L2_z;
-
-    //rear
-    float R3_x_current = R3_x;
-    float R3_y_current = R3_y;
-    float R3_z_current = R3_z;
-
-    float L3_x_current = L3_x;
-    float L3_y_current = L3_y;
-    float L3_z_current = L3_z;
-
-    //delay bentar (u know why)
-    usleep(500000);
-
-    //begin translation
-    inverse_k(kR1, R1_x_current, R1_y_current, -30, very_slow);
-    inverse_k(kL1, L1_x_current, L1_y_current, L1_z_current, very_slow);
-
-    inverse_k(kR2, R2_x_current, R2_y_current, -30, very_slow);
-    inverse_k(kL2, L2_x_current, L2_y_current, L2_z_current, very_slow);
-
-    inverse_k(kR3, R3_x_current, R3_y_current, -30, very_slow);
-    inverse_k(kL3, L3_x_current, L3_y_current, L3_z_current, very_slow);
-
-    //delay before returning back to normal
-    usleep(1500000);
-
-    //back to posisi sebelumnya
-    inverse_k(kR1, R1_x_current, R1_y_current, R1_z_current, very_slow);
-    inverse_k(kL1, L1_x_current, L1_y_current, L1_z_current, very_slow);
-
-    inverse_k(kR2, R2_x_current, R2_y_current, R2_z_current, very_slow);
-    inverse_k(kL2, L2_x_current, L2_y_current, L2_z_current, very_slow);
-
-    inverse_k(kR3, R3_x_current, R3_y_current, R3_z_current, very_slow);
-    inverse_k(kL3, L3_x_current, L3_y_current, L3_z_current, very_slow);
-}
-
-void translation_test() {
-    // make sure robot is primed
-    siap();
-
-    // remember last leg position
-    float R1_x_current = R1_x;
-    float R1_y_current = R1_y;
-    float R1_z_current = R1_z;
-
-    float L1_x_current = L1_x;
-    float L1_y_current = L1_y;
-    float L1_z_current = L1_z;
-
-    float R2_x_current = R2_x;
-    float R2_y_current = R2_y;
-    float R2_z_current = R2_z;
-
-    float L2_x_current = L2_x;
-    float L2_y_current = L2_y;
-    float L2_z_current = L2_z;
-
-    float R3_x_current = R3_x;
-    float R3_y_current = R3_y;
-    float R3_z_current = R3_z;
-
-    float L3_x_current = L3_x;
-    float L3_y_current = L3_y;
-    float L3_z_current = L3_z;
-
-    //delay bentar
-    usleep(500000);
-
-    //begin translation
-    inverse_k(kR1, R1_x_current, -50, R1_z_current, very_slow);
-    inverse_k(kL1, L1_x_current, 50, L1_z_current, very_slow);
-
-    inverse_k(kR2, R2_x_current, -45, R2_z_current, very_slow);
-    inverse_k(kL2, L2_x_current, 45, L2_z_current, very_slow);
-
-    inverse_k(kR3, R3_x_current, -25, R3_z_current, very_slow);
-    inverse_k(kL3, L3_x_current, 25, L3_z_current, very_slow);
-
-    //delay translasi (durasinya)
-    usleep(3500000);
-
-    //back to posisi sebelumnya
-    inverse_k(kR1, R1_x_current, R1_y_current, R1_z_current, very_slow);
-    inverse_k(kL1, L1_x_current, L1_y_current, L1_z_current, very_slow);
-
-    inverse_k(kR2, R2_x_current, R2_y_current, R2_z_current, very_slow);
-    inverse_k(kL2, L2_x_current, L2_y_current, L2_z_current, very_slow);
-
-    inverse_k(kR3, R3_x_current, R3_y_current, R3_z_current, very_slow);
-    inverse_k(kL3, L3_x_current, L3_y_current, L3_z_current, very_slow);
-}
 
 void test1()
 {
