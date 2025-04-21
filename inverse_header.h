@@ -335,6 +335,7 @@ void stand_tall();
 void stand_low();
 void round_shake();
 void trying_something_out();
+void siaptest();
 void setPosisiServo(uint8_t dxl_id, uint16_t posisi);
 void setPosisiServoSync(uint8_t dxl_id1, uint16_t posisi1, uint8_t dxl_id2, uint16_t posisi2);
 

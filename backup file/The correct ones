@@ -1,4 +1,4 @@
-void siap()
+void siap() //the robot stays still
 {
     trj_lurus(kR1, 80, 0, -60, 80, 0, -60);
     trj_lurus(kR2, 80, 0, -60, 80, 0, -60);
@@ -11,7 +11,7 @@ void siap()
     trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_slow, 2500);
 }
 
-void coba_majuv2()
+void coba_majuv2() //the robot moves forward
 {
     // kanan
     trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 25, -40);    // 
@@ -33,7 +33,7 @@ void coba_majuv2()
     trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
 }
 
-void coba_mundurv3()
+void coba_mundurv3() //the robot moves backwards
 {
     // kanan
     trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 30, -30);
@@ -55,3 +55,90 @@ void coba_mundurv3()
     trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 15000);
 }
 
+void kanan_robot() //the robot strafes right
+{
+    // kanan
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 60, 0, -40);
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 60, 0, -40);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 100, 0, -40);
+
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -60); // 40
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -60); // 40
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
+
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 100, 0, -40);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 100, 0, -40);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 60, 0, -40);
+
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 0, -60); // 95
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, 0, -60); // 00
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
+}
+
+void kiri_robot() //the robot strafes left
+{
+    // kanan
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 60, 0, -40);
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 60, 0, -40);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 100, 0, -40);
+
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -60); // 40
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -60); // 40
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
+
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 100, 0, -40);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 100, 0, -40);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 60, 0, -40);
+
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 0, -60); // 95
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, 0, -60); // 00
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
+}
+
+void putar_kanan() //the robot rotates right
+{
+    // langkah kaki kiri
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, -15, -30); // x0,y0,x1,y1,z0,zp
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, -15, -30);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, -15, -30);
+    // geser kaki kanan
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -60);
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -60);
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
+    // langkah kaki kanan
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -15, -30);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, -15, -30);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, -15, -30);
+    // geser kaki kanan
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 0, -60);
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, 0, -60);
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
+}
+
+void putar_kiri() //the robot rotates left
+{
+    // langkah kaki kiri
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 15, -30); // x0,y0,x1,y1,z0,zp
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, 15, -30);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, 15, -30);
+    // geser kaki kanan
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -60);
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -60);
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
+    // langkah kaki kanan
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, 15, -35);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 15, -30);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, 15, -30);
+    // geser kaki kanan
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 0, -60);
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, 0, -60);
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
+}

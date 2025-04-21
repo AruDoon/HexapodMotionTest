@@ -765,9 +765,9 @@ void coba_putar_kanan()
 {
 
     // langkah kaki kiri
-    trj_langkah(kL1, L1_x, L1_y, L1_z, 40, -15, -75); // x0,y0,x1,y1,z0,zp
-    trj_langkah(kL3, L3_x, L3_y, L3_z, 40, -15, -70);
-    trj_langkah(kR2, R2_x, R2_y, R2_z, 40, -15, -70);
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 40, -15, -30); // x0,y0,x1,y1,z0,zp
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 40, -15, -30);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 40, -15, -30);
     // geser kaki kanan
     trj_lurus(kR1, R1_x, R1_y, R1_z, 40, 0, -95);
     trj_lurus(kR3, R3_x, R3_y, R3_z, 40, 0, -70);
