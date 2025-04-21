@@ -289,6 +289,8 @@ void trj_lurus(uint32_t dxl_id, float x0, float y0, float z0, float x1, float y1
 void trj_langkah(uint32_t dxl_id, float x0, float y0, float z0, float x1, float y1, float zp);
 void trj_start(uint32_t id_kakiL1, uint32_t id_kakiL2, uint32_t id_kakiL3, uint32_t id_kakiR1, uint32_t id_kakiR2, uint32_t id_kakiR3, int kecepatan, int dly_trj);
 void translasi_body(float pos_x, float pos_y, float pos_z , int kecepatan, int dly_trj);
+void continuous_walk();
+bool coba_majuv2_interruptible();
 void siap();
 void test1();
 void coba_majuv2();
@@ -305,6 +307,7 @@ void putar_kanan();
 void coba_putar_kanan();
 void coba_putar_kiri();
 void coba_mundur();
+void coba_mundurv3();
 void coba_maju2();
 void siapv2();
 void coba_maju();
@@ -325,9 +328,29 @@ void kaki_to_coxa();
 void lift_front_legs();
 void lift_middle_legs();
 void lift_back_legs();
+void miring_kiri();
+void miring_kanan();
 void translation_test();
+void stand_tall();
+void stand_low();
+void round_shake();
+void trying_something_out();
 void setPosisiServo(uint8_t dxl_id, uint16_t posisi);
 void setPosisiServoSync(uint8_t dxl_id1, uint16_t posisi1, uint8_t dxl_id2, uint16_t posisi2);
+
+// Extra voids from controller program
+void enableRawMode();
+void disableRawMode();
+void keyboardInputThread();
+bool moveForward();
+bool moveBackward();
+bool moveLeft();
+bool moveRight();
+bool moveForwardLeft();
+bool moveForwardRight();
+bool moveBackwardLeft();
+bool moveBackwardRight();
+void wasdControl();
 // void setPosisiServoSync(std::vector<uint8_t> dxl_ids, std::vector<uint16_t> posisi)
 
 int dxl_comm_result = COMM_TX_FAIL;                                                  // Communication result

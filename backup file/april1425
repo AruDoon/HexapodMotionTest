@@ -620,22 +620,22 @@ void continuous_walk() {
                 std::cout << "Starting continuous walk. Press 9 to stop." << std::endl;
             }
             else if (choice == '2') {
-                miring_kanan();
-            }
-            else if (choice == '3') {
-                miring_kiri();
-            }
-            else if (choice == '4') {
                 lift_front_legs();
             }
-            else if (choice == '5') {
+            else if (choice == '3') {
+                stand_low();
+            }
+            else if (choice == '4') {
                 lift_back_legs();
             }
-            else if (choice == '6') {
+            else if (choice == '5') {
                 translation_test();
             }
+            else if (choice == '6') {
+                miring_kiri();
+            }
             else if (choice == '7') {
-                stand_low();
+                miring_kanan();
             }
             else if (choice == '8') {
                 stand_tall();
@@ -1229,6 +1229,20 @@ void stand_low() {
     inverse_k(kL3, L3_x_current, L3_y_current, L3_z_current, very_slow);
 }
 
+void round_shake() {
+    lift_front_legs();
+    usleep(50000);
+    miring_kanan();
+    usleep(50000);
+    lift_back_legs();
+    usleep(50000);
+    miring_kiri();
+    usleep(50000);
+    lift_front_legs();
+    usleep(50000);
+    siap();
+}
+
 void coba_mundurv3()
 {
     // kanan
@@ -1251,96 +1265,7 @@ void coba_mundurv3()
     trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
 }
 
-void kanan_robot()
-{
-    // kanan
-    trj_langkah(kL1, L1_x, L1_y, L1_z, 70, 0, -60);
-    trj_langkah(kL3, L3_x, L3_y, L3_z, 70, 0, -60);
-    trj_langkah(kR2, R2_x, R2_y, R2_z, 90, 0, -60);
-
-    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -80); // 40
-    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -80); // 40
-    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -80);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-
-    trj_langkah(kR1, R1_x, R1_y, R1_z, 90, 0, -60);
-    trj_langkah(kR3, R3_x, R3_y, R3_z, 90, 0, -60);
-    trj_langkah(kL2, L2_x, L2_y, L2_z, 70, 0, -60);
-
-    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 0, -80); // 95
-    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, 0, -80); // 00
-    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -80);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-}
-
-void kiri_robot()
-{
-    // kanan
-    trj_langkah(kL1, L1_x, L1_y, L1_z, 70, 0, -60);
-    trj_langkah(kL3, L3_x, L3_y, L3_z, 70, 0, -60);
-    trj_langkah(kR2, R2_x, R2_y, R2_z, 90, 0, -60);
-
-    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -80); // 40
-    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -80); // 40
-    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -80);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-
-    trj_langkah(kR1, R1_x, R1_y, R1_z, 90, 0, -60);
-    trj_langkah(kR3, R3_x, R3_y, R3_z, 90, 0, -60);
-    trj_langkah(kL2, L2_x, L2_y, L2_z, 70, 0, -60);
-
-    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 0, -80); // 95
-    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, 0, -80); // 00
-    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -80);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-}
-
-void putar_kanan()
-{
-    // langkah kaki kiri
-    trj_langkah(kL1, L1_x, L1_y, L1_z, -80, 15, -75); // x0,y0,x1,y1,z0,zp
-    trj_langkah(kL3, L3_x, L3_y, L3_z, -80, 15, -70);
-    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, -15, -70);
-    // geser kaki kanan
-    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -95);
-    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -70);
-    trj_lurus(kL2, L2_x, L2_y, L2_z, -80, 0, -90);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-    // langkah kaki kanan
-    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -15, -70);
-    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, -15, -50);
-    trj_langkah(kL2, L2_x, L2_y, L2_z, -80, 15, -70);
-    // geser kaki kanan
-    trj_lurus(kL1, L1_x, L1_y, L1_z, -80, 0, -90);
-    trj_lurus(kL3, L3_x, L3_y, L3_z, -80, 0, -90);
-    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -90);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-}
-
-void putar_kiri()
-{
-    // langkah kaki kiri
-    trj_langkah(kL1, L1_x, L1_y, L1_z, -80, -15, -70); // x0,y0,x1,y1,z0,zp
-    trj_langkah(kL3, L3_x, L3_y, L3_z, -80, -15, -70);
-    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, 15, -70);
-    // geser kaki kanan
-    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -95);
-    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -70);
-    trj_lurus(kL2, L2_x, L2_y, L2_z, -80, 0, -90);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-    // langkah kaki kanan
-    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, 15, -75);
-    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 15, -50);
-    trj_langkah(kL2, L2_x, L2_y, L2_z, -80, -15, -70);
-    // geser kaki kanan
-    trj_lurus(kL1, L1_x, L1_y, L1_z, -80, 0, -90);
-    trj_lurus(kL3, L3_x, L3_y, L3_z, -80, 0, -90);
-    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -90);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-}
-
 void test1()
 {
     inverse_k(kR1, 80, 0, -60, very_slow);
 }
-

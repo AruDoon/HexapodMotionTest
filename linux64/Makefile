@@ -44,6 +44,7 @@ FORMAT      = -m64
 INCLUDES   += -I$(DIR_DXL)/include/dynamixel_sdk
 LIBRARIES  += -ldxl_x64_cpp
 LIBRARIES  += -lrt
+LIBRARIES  += -pthread
 
 #---------------------------------------------------------------------
 # Files

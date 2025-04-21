@@ -440,6 +440,7 @@ void coba_putar_kanan_tanggav2()
     trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -80);
     trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 30000);
 }
+
 void coba_putar_kiri_tanggav2()
 {
     // kanan
@@ -461,6 +462,7 @@ void coba_putar_kiri_tanggav2()
     trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -80);
     trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 30000);
 }
+
 void coba_majuv2()
 {
     // kanan

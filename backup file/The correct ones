@@ -1,0 +1,57 @@
+void siap()
+{
+    trj_lurus(kR1, 80, 0, -60, 80, 0, -60);
+    trj_lurus(kR2, 80, 0, -60, 80, 0, -60);
+    trj_lurus(kR3, 80, 0, -60, 80, 0, -60);
+
+    trj_lurus(kL1, 95, 0, -60, 95, 0, -60);
+    trj_lurus(kL2, 80, 0, -60, 80, 0, -60);
+    trj_lurus(kL3, 80, 0, -60, 80, 0, -60);
+
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_slow, 2500);
+}
+
+void coba_majuv2()
+{
+    // kanan
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 25, -40);    // 
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, -25, -40);   // 
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, 15, -40);
+
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, -40, -60); // 90
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 10, -60);  // 90
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -60);   
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -25, -40);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 25, -40);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, -15, -40);
+
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 40, -60);  // 95
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, -10, -60); // 100
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+}
+
+void coba_mundurv3()
+{
+    // kanan
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 30, -30);
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, 0, -30);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, -15, -30);
+
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, -10, -60); // 90
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 40, -60);  // 90
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 15000);
+
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -30, -30);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 0, -30);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, 15, -30);
+
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 10, -60);  // 95
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, -40, -60); // 100
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -60);
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 15000);
+}
+

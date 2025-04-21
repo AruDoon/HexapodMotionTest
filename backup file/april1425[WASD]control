@@ -10,8 +10,522 @@
 #include "cmath"
 #include <iostream>
 
+//extras from control
+#include <termios.h>
+#include <fcntl.h>
+#include <map>
+#include <thread>
+#include <atomic>
+
+// Direction states
+enum MovementDirection {
+    NONE,
+    FORWARD,
+    BACKWARD,
+    LEFT,
+    RIGHT,
+    FORWARD_LEFT,
+    FORWARD_RIGHT,
+    BACKWARD_LEFT,
+    BACKWARD_RIGHT
+};
+
+// Global flag to signal stop
+volatile bool stop_walking = false;
+
+// Global variables for control
+std::atomic<MovementDirection> currentDirection(NONE);
+std::atomic<bool> terminateProgram(false);
+volatile bool direction_changed = false; // Flag to indicate direction change
+
+// Function to enable non-blocking keyboard input
+void enableRawMode() {
+    struct termios raw;
+    tcgetattr(STDIN_FILENO, &raw);
+    // Save original termios settings
+    struct termios orig_termios = raw;
+    
+    // Modify settings for raw mode
+    raw.c_lflag &= ~(ECHO | ICANON);
+    raw.c_cc[VMIN] = 0;  // Return immediately even if no input
+    raw.c_cc[VTIME] = 0; // No timeout
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+    
+    // Set stdin to non-blocking
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags | O_NONBLOCK);
+    
+    std::cout << "Raw mode enabled. Press 'q' to quit." << std::endl;
+}
+
+// Function to disable raw mode and restore terminal
+void disableRawMode() {
+    struct termios raw;
+    tcgetattr(STDIN_FILENO, &raw);
+    raw.c_lflag |= (ECHO | ICANON);
+    tcsetattr(STDIN_FILENO, TCSAFLUSH, &raw);
+    
+    // Restore blocking mode
+    int flags = fcntl(STDIN_FILENO, F_GETFL, 0);
+    fcntl(STDIN_FILENO, F_SETFL, flags & ~O_NONBLOCK);
+    
+    std::cout << "Terminal restored to normal mode." << std::endl;
+}
+
+// Key state tracker - using a map to track which keys are currently pressed
+std::map<char, bool> keyState;
+
+// Thread to read keyboard input
+void keyboardInputThread() {
+    char c;
+    
+    while (!terminateProgram) {
+        // Try to read a character
+        if (read(STDIN_FILENO, &c, 1) == 1) {
+            // Process key press
+            if (c == 'q') {
+                terminateProgram = true;
+                stop_walking = true; // Use existing stop mechanism
+                std::cout << "Quitting WASD control..." << std::endl;
+                break;
+            }
+            
+            // Update key state
+            if (c == 'w' || c == 'a' || c == 's' || c == 'd') {
+                keyState[c] = true;
+                direction_changed = true;
+            }
+        } else {
+            // Check if keys have been released by regularly "polling"
+            // This is a simple approach - in a more sophisticated implementation
+            // you would track actual key release events
+            
+            // Small delay to prevent CPU hogging
+            usleep(30000); // 30ms delay
+            
+            // Check for key state changes
+            bool old_w = keyState['w'], old_a = keyState['a'], 
+                 old_s = keyState['s'], old_d = keyState['d'];
+            
+            // Reset key states and recheck which keys are pressed
+            keyState['w'] = false;
+            keyState['a'] = false;
+            keyState['s'] = false;
+            keyState['d'] = false;
+            
+            // Poll each key individually - this is a simple but effective approach
+            char temp;
+            while (read(STDIN_FILENO, &temp, 1) == 1) {
+                if (temp == 'w' || temp == 'a' || temp == 's' || temp == 'd') {
+                    keyState[temp] = true;
+                }
+            }
+            
+            // See if key state changed
+            if (old_w != keyState['w'] || old_a != keyState['a'] || 
+                old_s != keyState['s'] || old_d != keyState['d']) {
+                direction_changed = true;
+            }
+        }
+        
+        // Determine movement direction based on current key state
+        MovementDirection newDirection = NONE;
+        
+        if (keyState['w'] && keyState['a']) newDirection = FORWARD_LEFT;
+        else if (keyState['w'] && keyState['d']) newDirection = FORWARD_RIGHT;
+        else if (keyState['s'] && keyState['a']) newDirection = BACKWARD_LEFT;
+        else if (keyState['s'] && keyState['d']) newDirection = BACKWARD_RIGHT;
+        else if (keyState['w']) newDirection = FORWARD;
+        else if (keyState['s']) newDirection = BACKWARD;
+        else if (keyState['a']) newDirection = LEFT;
+        else if (keyState['d']) newDirection = RIGHT;
+        
+        // Update direction if changed
+        if (currentDirection != newDirection) {
+            currentDirection = newDirection;
+            direction_changed = true;
+        }
+    }
+}
+
+// Function to move forward - using your existing movement pattern
+bool moveForward() {
+    // Using your existing coba_majuv2_interruptible
+    return coba_majuv2_interruptible();
+}
+
+// Function to move backward
+bool moveBackward() {
+    // This is a reverse version of your forward walk
+    // Check if stop was requested before starting
+    if (stop_walking) return false;
+    
+    // First part - reverse of your forward walking pattern
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -25, -40);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 25, -40);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, -15, -40);
+    
+    // Check if stop requested after setting up trajectories
+    if (stop_walking) return false;
+
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 40, -60);
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, -10, -60);
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -60);
+    
+    // Execute first half and check if stop requested
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    if (stop_walking) return false;
+
+    // Second part of the walking cycle
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 25, -40);
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, -25, -40);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, 15, -40);
+    
+    // Check if stop requested before continuing
+    if (stop_walking) return false;
+
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, -40, -60);
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 10, -60);
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -60);
+    
+    // Execute second half
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    
+    // Return success if we completed the whole cycle
+    return true;
+}
+
+// Function to move left (turn left in place)
+bool moveLeft() {
+    // Modified version of existing miring_kiri function for turning left
+    if (stop_walking) return false;
+    
+    // Left turning pattern
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 15, -40);
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, 15, -40);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, 15, -40);
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, -15, -60);
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, -15, -60);
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, -15, -60);
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    if (stop_walking) return false;
+    
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -15, -40);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, -15, -40);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, -15, -40);
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 15, -60);
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, 15, -60);
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 15, -60);
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    
+    return true;
+}
+
+// Function to move right (turn right in place)
+bool moveRight() {
+    // Modified version of existing miring_kanan function for turning right
+    if (stop_walking) return false;
+    
+    // Right turning pattern
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, -15, -40);
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, -15, -40);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, -15, -40);
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 15, -60);
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 15, -60);
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 15, -60);
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    if (stop_walking) return false;
+    
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, 15, -40);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 15, -40);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, 15, -40);
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, -15, -60);
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, -15, -60);
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, -15, -60);
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    
+    return true;
+}
+
+// Function to move forward-left (diagonal)
+bool moveForwardLeft() {
+    // Combined forward and left movements
+    if (stop_walking) return false;
+    
+    // First part - modified for forward-left diagonal
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 30, -40);    // Increased y for left turn
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, -20, -40);   // Less negative y
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, 20, -40);    // Increased y
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, -30, -60);     // More negative y
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 15, -60);      // Increased y
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 10, -60);      // Increased y
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    if (stop_walking) return false;
+    
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -30, -40);   // More negative y
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 30, -40);    // Increased y
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, -10, -40);   // Less negative y
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 50, -60);      // Increased y
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, -5, -60);      // Less negative y
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 10, -60);      // Increased y
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    
+    return true;
+}
+
+// Function to move forward-right (diagonal)
+bool moveForwardRight() {
+    // Combined forward and right movements
+    if (stop_walking) return false;
+    
+    // First part - modified for forward-right diagonal
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 20, -40);    // Less y for right turn
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, -30, -40);   // More negative y
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, 10, -40);    // Less y
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, -50, -60);     // More negative y
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 5, -60);       // Less y
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, -10, -60);     // More negative y
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    if (stop_walking) return false;
+    
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -20, -40);   // Less negative y
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 20, -40);    // Less y
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, -20, -40);   // More negative y
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 30, -60);      // Less y
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, -15, -60);     // More negative y
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, -10, -60);     // More negative y
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    
+    return true;
+}
+
+// Function to move backward-left (diagonal)
+bool moveBackwardLeft() {
+    // Combined backward and left movements
+    if (stop_walking) return false;
+    
+    // Modified backward-left pattern
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -30, -40);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 20, -40);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, -20, -40);
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 30, -60);
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, -15, -60);
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 10, -60);
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    if (stop_walking) return false;
+    
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 30, -40);
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, -20, -40);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, 20, -40);
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, -30, -60);
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 15, -60);
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, -10, -60);
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    
+    return true;
+}
+
+// Function to move backward-right (diagonal)
+bool moveBackwardRight() {
+    // Combined backward and right movements
+    if (stop_walking) return false;
+    
+    // Modified backward-right pattern
+    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -20, -40);
+    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 30, -40);
+    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, -10, -40);
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 50, -60);
+    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, -5, -60);
+    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, -10, -60);
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    if (stop_walking) return false;
+    
+    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 20, -40);
+    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, -30, -40);
+    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, 10, -40);
+    
+    if (stop_walking) return false;
+    
+    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, -50, -60);
+    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 5, -60);
+    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 10, -60);
+    
+    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, ultra_fast, 2500);
+    
+    return true;
+}
+
+// Main WASD control function
+void wasdControl() {
+    // Print instructions
+    std::cout << "WASD Hexapod Control" << std::endl;
+    std::cout << "-------------------" << std::endl;
+    std::cout << "W: Forward" << std::endl;
+    std::cout << "A: Left" << std::endl;
+    std::cout << "S: Backward" << std::endl;
+    std::cout << "D: Right" << std::endl;
+    std::cout << "Combinations (W+A, W+D, etc.): Diagonal movement" << std::endl;
+    std::cout << "Q: Quit" << std::endl;
+    
+    // Set initial position
+    siap();
+    
+    // Start keyboard input thread
+    std::thread inputThread(keyboardInputThread);
+    
+    MovementDirection lastDirection = NONE;
+    bool success = true;
+    
+    // Main control loop
+    while (!terminateProgram) {
+        MovementDirection direction = currentDirection;
+        
+        // Only execute new movement if direction changed or last movement completed
+        if (direction_changed || !success) {
+            direction_changed = false;
+            stop_walking = true; // Signal to stop current movement
+            
+            // Reset stop flag after a small delay to ensure current movement stops
+            usleep(100000); // 100ms delay
+            stop_walking = false;
+            
+            lastDirection = direction;
+            
+            // Execute new movement based on direction
+            switch(direction) {
+                case FORWARD:
+                    std::cout << "Moving Forward" << std::endl;
+                    success = moveForward();
+                    break;
+                case BACKWARD:
+                    std::cout << "Moving Backward" << std::endl;
+                    success = moveBackward();
+                    break;
+                case LEFT:
+                    std::cout << "Turning Left" << std::endl;
+                    success = moveLeft();
+                    break;
+                case RIGHT:
+                    std::cout << "Turning Right" << std::endl;
+                    success = moveRight();
+                    break;
+                case FORWARD_LEFT:
+                    std::cout << "Moving Forward-Left" << std::endl;
+                    success = moveForwardLeft();
+                    break;
+                case FORWARD_RIGHT:
+                    std::cout << "Moving Forward-Right" << std::endl;
+                    success = moveForwardRight();
+                    break;
+                case BACKWARD_LEFT:
+                    std::cout << "Moving Backward-Left" << std::endl;
+                    success = moveBackwardLeft();
+                    break;
+                case BACKWARD_RIGHT:
+                    std::cout << "Moving Backward-Right" << std::endl;
+                    success = moveBackwardRight();
+                    break;
+                case NONE:
+                    std::cout << "Stopping" << std::endl;
+                    siap(); // Return to ready position
+                    success = true;
+                    break;
+            }
+        } else if (direction != NONE) {
+            // Continue current movement
+            switch(direction) {
+                case FORWARD:
+                    success = moveForward();
+                    break;
+                case BACKWARD:
+                    success = moveBackward();
+                    break;
+                case LEFT:
+                    success = moveLeft();
+                    break;
+                case RIGHT:
+                    success = moveRight();
+                    break;
+                case FORWARD_LEFT:
+                    success = moveForwardLeft();
+                    break;
+                case FORWARD_RIGHT:
+                    success = moveForwardRight();
+                    break;
+                case BACKWARD_LEFT:
+                    success = moveBackwardLeft();
+                    break;
+                case BACKWARD_RIGHT:
+                    success = moveBackwardRight();
+                    break;
+                default:
+                    break;
+            }
+        }
+        
+        // Small delay to prevent CPU hogging if we're not doing anything
+        if (direction == NONE) {
+            usleep(50000); // 50ms delay
+        }
+    }
+    
+    // Cleanup
+    if (inputThread.joinable()) {
+        inputThread.join();
+    }
+    
+    // Return to ready position before exiting
+    siap();
+    std::cout << "WASD control terminated." << std::endl;
+}
+
+// Modify your main function to use the WASD control
 int main() {
-    // Panggil fungsi siap() satu kali
+    // Original port opening and setup code remains the same
     int dxl_comm_result = COMM_TX_FAIL; // Communication result
     uint8_t dxl_error = 0; // Dynamixel error
 
@@ -42,10 +556,9 @@ int main() {
     // Create a GroupSyncWrite instance for speed control
     dynamixel::GroupSyncWrite groupSyncWriteSpeed(portHandler, packetHandler, ADDR_AX_GOAL_SPEED, LEN_AX);
     
-    // IC();
     for (int i = 0; i < 18; i++)
     {
-        // Enable Dynamixel#1 Torque
+        // Enable Dynamixel Torque
         dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, dxl_idku[i], ADDR_AX_TORQUE_ENABLE, TORQUE_ENABLE, &dxl_error);
         if (dxl_comm_result != COMM_SUCCESS)
         {
@@ -60,9 +573,8 @@ int main() {
             printf("Dynamixel#%d has been successfully connected \n", dxl_idku[i]);
         }
 
-        // Set initial speed to very slow (modify the value as needed)
-        // For AX series: 1 is slowest, 1023 is fastest, 0 is MAX speed
-        uint16_t init_speed = ultra_fast; // Using your very_slow constant
+        // Set initial speed
+        uint16_t init_speed = ultra_fast;
         uint8_t speed_params[2];
         speed_params[0] = DXL_LOBYTE(init_speed);
         speed_params[1] = DXL_HIBYTE(init_speed);
@@ -79,9 +591,99 @@ int main() {
     // Allow some time for speed settings to take effect
     usleep(50000); // 50ms delay
 
+    // Initialize robot to ready position
     siap();
+    
+    // Set up raw terminal mode for keyboard input
+    enableRawMode();
+    
+    // Start WASD control
+    wasdControl();
+    
+    // Restore terminal settings
+    disableRawMode();
+    
+    return 0;
+}
 
-    continuous_walk();
+// ============================================================================== [updates]
+
+//=============================================================================== [main]
+
+// int main() {
+//     // Panggil fungsi siap() satu kali
+//     int dxl_comm_result = COMM_TX_FAIL; // Communication result
+//     uint8_t dxl_error = 0; // Dynamixel error
+
+//     // Open port
+//     if (portHandler->openPort())
+//     {
+//         printf("Succeeded to open the port!\n");
+//     }
+//     else
+//     {
+//         printf("Failed to open the port!\n");
+//         printf("Press any key to terminate...\n");
+//         return 0;
+//     }
+
+//     // Set port baudrate
+//     if (portHandler->setBaudRate(BAUDRATE))
+//     {
+//         printf("Succeeded to change the baudrate!\n");
+//     }
+//     else
+//     {
+//         printf("Failed to change the baudrate!\n");
+//         printf("Press any key to terminate...\n");
+//         return 0;
+//     }
+
+//     // Create a GroupSyncWrite instance for speed control
+//     dynamixel::GroupSyncWrite groupSyncWriteSpeed(portHandler, packetHandler, ADDR_AX_GOAL_SPEED, LEN_AX);
+    
+//     // IC();
+//     for (int i = 0; i < 18; i++)
+//     {
+//         // Enable Dynamixel#1 Torque
+//         dxl_comm_result = packetHandler->write2ByteTxRx(portHandler, dxl_idku[i], ADDR_AX_TORQUE_ENABLE, TORQUE_ENABLE, &dxl_error);
+//         if (dxl_comm_result != COMM_SUCCESS)
+//         {
+//             printf("%s\n", packetHandler->getTxRxResult(dxl_comm_result));
+//         }
+//         else if (dxl_error != 0)
+//         {
+//             printf("%s\n", packetHandler->getRxPacketError(dxl_error));
+//         }
+//         else
+//         {
+//             printf("Dynamixel#%d has been successfully connected \n", dxl_idku[i]);
+//         }
+
+//         // Set initial speed to very slow (modify the value as needed)
+//         // For AX series: 1 is slowest, 1023 is fastest, 0 is MAX speed
+//         uint16_t init_speed = ultra_fast; // Using your very_slow constant
+//         uint8_t speed_params[2];
+//         speed_params[0] = DXL_LOBYTE(init_speed);
+//         speed_params[1] = DXL_HIBYTE(init_speed);
+//         groupSyncWriteSpeed.addParam(dxl_idku[i], speed_params);
+//     }
+
+//     // Send speed commands to all servos before any movement
+//     dxl_comm_result = groupSyncWriteSpeed.txPacket();
+//     if (dxl_comm_result != COMM_SUCCESS) {
+//         printf("%s\n", packetHandler->getTxRxResult(dxl_comm_result));
+//     }
+//     groupSyncWriteSpeed.clearParam();
+
+//     // Allow some time for speed settings to take effect
+//     usleep(50000); // 50ms delay
+
+//     siap();
+
+//     continuous_walk();
+
+    //===================================================================================== [MAIN]
 
     // std::cout << "Tekan Enter untuk menjalankan coba_majuv2()..." << std::endl;
 
@@ -119,7 +721,7 @@ int main() {
     // }
 
     // return 0;
-}
+// }
 
 
 // Void Functions 
@@ -559,7 +1161,7 @@ void kaki_to_coxa() {
 }
 
 // Global flag to signal stop
-volatile bool stop_walking = false;
+// volatile bool stop_walking = false;
 
 
 void continuous_walk() {
@@ -620,22 +1222,22 @@ void continuous_walk() {
                 std::cout << "Starting continuous walk. Press 9 to stop." << std::endl;
             }
             else if (choice == '2') {
-                miring_kanan();
-            }
-            else if (choice == '3') {
-                miring_kiri();
-            }
-            else if (choice == '4') {
                 lift_front_legs();
             }
-            else if (choice == '5') {
+            else if (choice == '3') {
+                stand_low();
+            }
+            else if (choice == '4') {
                 lift_back_legs();
             }
-            else if (choice == '6') {
+            else if (choice == '5') {
                 translation_test();
             }
+            else if (choice == '6') {
+                miring_kiri();
+            }
             else if (choice == '7') {
-                stand_low();
+                miring_kanan();
             }
             else if (choice == '8') {
                 stand_tall();
@@ -1229,118 +1831,21 @@ void stand_low() {
     inverse_k(kL3, L3_x_current, L3_y_current, L3_z_current, very_slow);
 }
 
-void coba_mundurv3()
-{
-    // kanan
-    trj_langkah(kL1, L1_x, L1_y, L1_z, 80, 30, -30);
-    trj_langkah(kL3, L3_x, L3_y, L3_z, 80, 0, -30);
-    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, -15, -30);
-
-    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, -10, -60); // 90
-    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 40, -60);  // 90
-    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -60);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-
-    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -30, -30);
-    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 0, -30);
-    trj_langkah(kL2, L2_x, L2_y, L2_z, 80, 15, -30);
-
-    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 10, -60);  // 95
-    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, -40, -60); // 100
-    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -60);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-}
-
-void kanan_robot()
-{
-    // kanan
-    trj_langkah(kL1, L1_x, L1_y, L1_z, 70, 0, -60);
-    trj_langkah(kL3, L3_x, L3_y, L3_z, 70, 0, -60);
-    trj_langkah(kR2, R2_x, R2_y, R2_z, 90, 0, -60);
-
-    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -80); // 40
-    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -80); // 40
-    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -80);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-
-    trj_langkah(kR1, R1_x, R1_y, R1_z, 90, 0, -60);
-    trj_langkah(kR3, R3_x, R3_y, R3_z, 90, 0, -60);
-    trj_langkah(kL2, L2_x, L2_y, L2_z, 70, 0, -60);
-
-    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 0, -80); // 95
-    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, 0, -80); // 00
-    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -80);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-}
-
-void kiri_robot()
-{
-    // kanan
-    trj_langkah(kL1, L1_x, L1_y, L1_z, 70, 0, -60);
-    trj_langkah(kL3, L3_x, L3_y, L3_z, 70, 0, -60);
-    trj_langkah(kR2, R2_x, R2_y, R2_z, 90, 0, -60);
-
-    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -80); // 40
-    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -80); // 40
-    trj_lurus(kL2, L2_x, L2_y, L2_z, 80, 0, -80);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-
-    trj_langkah(kR1, R1_x, R1_y, R1_z, 90, 0, -60);
-    trj_langkah(kR3, R3_x, R3_y, R3_z, 90, 0, -60);
-    trj_langkah(kL2, L2_x, L2_y, L2_z, 70, 0, -60);
-
-    trj_lurus(kL1, L1_x, L1_y, L1_z, 80, 0, -80); // 95
-    trj_lurus(kL3, L3_x, L3_y, L3_z, 80, 0, -80); // 00
-    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -80);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-}
-
-void putar_kanan()
-{
-    // langkah kaki kiri
-    trj_langkah(kL1, L1_x, L1_y, L1_z, -80, 15, -75); // x0,y0,x1,y1,z0,zp
-    trj_langkah(kL3, L3_x, L3_y, L3_z, -80, 15, -70);
-    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, -15, -70);
-    // geser kaki kanan
-    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -95);
-    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -70);
-    trj_lurus(kL2, L2_x, L2_y, L2_z, -80, 0, -90);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-    // langkah kaki kanan
-    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, -15, -70);
-    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, -15, -50);
-    trj_langkah(kL2, L2_x, L2_y, L2_z, -80, 15, -70);
-    // geser kaki kanan
-    trj_lurus(kL1, L1_x, L1_y, L1_z, -80, 0, -90);
-    trj_lurus(kL3, L3_x, L3_y, L3_z, -80, 0, -90);
-    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -90);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-}
-
-void putar_kiri()
-{
-    // langkah kaki kiri
-    trj_langkah(kL1, L1_x, L1_y, L1_z, -80, -15, -70); // x0,y0,x1,y1,z0,zp
-    trj_langkah(kL3, L3_x, L3_y, L3_z, -80, -15, -70);
-    trj_langkah(kR2, R2_x, R2_y, R2_z, 80, 15, -70);
-    // geser kaki kanan
-    trj_lurus(kR1, R1_x, R1_y, R1_z, 80, 0, -95);
-    trj_lurus(kR3, R3_x, R3_y, R3_z, 80, 0, -70);
-    trj_lurus(kL2, L2_x, L2_y, L2_z, -80, 0, -90);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
-    // langkah kaki kanan
-    trj_langkah(kR1, R1_x, R1_y, R1_z, 80, 15, -75);
-    trj_langkah(kR3, R3_x, R3_y, R3_z, 80, 15, -50);
-    trj_langkah(kL2, L2_x, L2_y, L2_z, -80, -15, -70);
-    // geser kaki kanan
-    trj_lurus(kL1, L1_x, L1_y, L1_z, -80, 0, -90);
-    trj_lurus(kL3, L3_x, L3_y, L3_z, -80, 0, -90);
-    trj_lurus(kR2, R2_x, R2_y, R2_z, 80, 0, -90);
-    trj_start(kR1, kR2, kR3, kL1, kL2, kL3, very_slow, 2500);
+void round_shake() {
+    lift_front_legs();
+    usleep(50000);
+    miring_kanan();
+    usleep(50000);
+    lift_back_legs();
+    usleep(50000);
+    miring_kiri();
+    usleep(50000);
+    lift_front_legs();
+    usleep(50000);
+    siap();
 }
 
 void test1()
 {
     inverse_k(kR1, 80, 0, -60, very_slow);
 }
-
